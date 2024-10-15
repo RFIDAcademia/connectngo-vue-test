@@ -10,51 +10,132 @@ Your task is to:
 
 ```js
 <template>
-  <div>
-    <h1>JIRA Issues</h1>
-    <button @click="fetchIssues">Fetch Issues</button>
-    <button @click="fetchSpecificIssue">Fetch Specific Issue</button>
-    <div v-if="error">{{ error }}</div>
-    <ul v-if="issues">
-      <li v-for="issue in issues" :key="issue.id">{{ issue.title }}</li>
-    </ul>
-    <div v-if="specificIssue">
-      <h2>{{ specificIssue.title }}</h2>
-      <p>{{ specificIssue.description }}</p>
+    <div>
+        <h1>JIRA Issues</h1>
+        <button @click="getIssues">Fetch Issues</button>
+        <button @click="getIssue('ABC-123')">Fetch Specific Issue</button>
+        <button @click="createIssue">Create Issue</button>
+        <button @click="updateIssue('ABC-123')">Update Issue</button>
+        <button @click="deleteIssue('ABC-123')">Delete Issue</button>
+        <div v-if="error">{{ error }}</div>
+        <ul v-if="issues">
+            <li v-for="issue in issues" :key="issue.id">{{ issue.title }}</li>
+        </ul>
+        <div v-if="specificIssue">
+            <h2>{{ specificIssue.title }}</h2>
+            <p>{{ specificIssue.description }}</p>
+        </div>
     </div>
-  </div>
 </template>
 
 <script>
 export default {
-  data() {
-    return {
-      issues: null,
-      specificIssue: null,
-      error: null
-    };
-  },
-  methods: {
-    async fetchIssues() {
-      try {
-        const response = await fetch('https://example-jira-api.com/issues');
-        const data = await response.json();
-        this.issues = data.issues;
-      } catch (error) {
-        this.error = 'Failed to fetch issues';
-      }
+    data() {
+        return {
+            issues: null,
+            specificIssue: null,
+            error: null,
+            apiUrl: 'https://example-jira-api.com',
+            username: 'myusername',
+            apiToken: 'my-api-token'
+        };
     },
-    async fetchSpecificIssue() {
-      try {
-        const response = await fetch('https://example-jira-api.com/issues/ABC-123');
-        const data = await response.json();
-        this.specificIssue = data;
-      } catch (error) {
-        this.error = 'Failed to fetch specific issue';
-      }
+    methods: {
+        async getIssues() {
+            try {
+                const response = await fetch(`${this.apiUrl}/rest/api/2/search?jql=project=ABC`, {
+                    headers: {
+                        'Authorization': `Basic ${btoa(`${this.username}:${this.apiToken}`)}`
+                    }
+                });
+                const data = await response.json();
+                this.issues = data.issues;
+            } catch (error) {
+                this.error = 'Failed to fetch issues';
+            }
+        },
+        async getIssue(issueId) {
+            try {
+                const response = await fetch(`${this.apiUrl}/rest/api/2/issue/${issueId}`, {
+                    headers: {
+                        'Authorization': `Basic ${btoa(`${this.username}:${this.apiToken}`)}`
+                    }
+                });
+                const data = await response.json();
+                this.specificIssue = data;
+            } catch (error) {
+                this.error = 'Failed to fetch specific issue';
+            }
+        },
+        async createIssue() {
+            const issueData = {
+                fields: {
+                    project: {
+                        key: "ABC"
+                    },
+                    summary: "New Issue",
+                    description: "Description for the new issue",
+                    issuetype: {
+                        name: "Bug"
+                    }
+                }
+            };
+
+            try {
+                const response = await fetch(`${this.apiUrl}/rest/api/2/issue`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Basic ${btoa(`${this.username}:${this.apiToken}`)}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(issueData)
+                });
+                const data = await response.json();
+                console.log('Issue created:', data);
+            } catch (error) {
+                this.error = 'Failed to create issue';
+            }
+        },
+        async updateIssue(issueId) {
+            const issueData = {
+                fields: {
+                    summary: "Updated Issue Summary",
+                    description: "Updated issue description"
+                }
+            };
+
+            try {
+                const response = await fetch(`${this.apiUrl}/rest/api/2/issue/${issueId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Basic ${btoa(`${this.username}:${this.apiToken}`)}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(issueData)
+                });
+                const data = await response.json();
+                console.log('Issue updated:', data);
+            } catch (error) {
+                this.error = 'Failed to update issue';
+            }
+        },
+        async deleteIssue(issueId) {
+            try {
+                const response = await fetch(`${this.apiUrl}/rest/api/2/issue/${issueId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Basic ${btoa(`${this.username}:${this.apiToken}`)}`
+                    }
+                });
+                const data = await response.json();
+                console.log('Issue deleted:', data);
+            } catch (error) {
+                this.error = 'Failed to delete issue';
+            }
+        }
     }
-  }
 };
 </script>
+
 
 ```
